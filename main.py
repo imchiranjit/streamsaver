@@ -1,4 +1,7 @@
 import sys
+import os
+import json
+from settings import SettingsWindow
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel,
     QLineEdit, QPushButton, QFileDialog, QMessageBox,
@@ -155,18 +158,42 @@ class YouTubeDownloader(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Stream Saver")
-        self.setGeometry(300, 300, 600, 400)  # Made taller to accommodate new elements
+        self.setGeometry(300, 300, 600, 400)
         self.download_path = ""
         self.download_thread = None
         self.fetch_thread = None
         self.format_data = None
+        self.settings = None
         self.setup_ui()
+        self.load_settings()  # Load settings
         self.apply_material_styles()
+
+    def load_settings(self):
+        """Load settings from JSON file"""
+        settings_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "settings.json")
+        try:
+            if os.path.exists(settings_path):
+                with open(settings_path, 'r') as f:
+                    self.settings = json.load(f)
+                    # Set default download path from settings if available
+                    if self.settings and 'general' in self.settings and 'default_download_location' in self.settings['general']:
+                        self.download_path = self.settings['general']['default_download_location']
+                        if self.download_path and os.path.exists(self.download_path):
+                            self.location_label.setText(self.download_path)
+        except Exception as e:
+            print(f"Error loading settings: {e}")
+            self.settings = None
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(24, 24, 24, 24)
         main_layout.setSpacing(16)
+        
+        # App header layout
+        header_layout = QHBoxLayout()
+
+        title_layout = QVBoxLayout()
+        title_layout.setSpacing(0)
         
         # App title
         title_label = QLabel("Stream Saver")
@@ -174,15 +201,28 @@ class YouTubeDownloader(QWidget):
         title_font.setPointSize(16)
         title_font.setBold(True)
         title_label.setFont(title_font)
-        main_layout.addWidget(title_label, alignment=Qt.AlignCenter)
-        
+        title_layout.addWidget(title_label)
+
         # Subtitle
         subtitle = QLabel("Download videos easily")
         subtitle_font = QFont()
         subtitle_font.setPointSize(10)
         subtitle.setFont(subtitle_font)
         subtitle.setStyleSheet("color: #5f6368;")
-        main_layout.addWidget(subtitle, alignment=Qt.AlignCenter)
+        title_layout.addWidget(subtitle)
+
+        header_layout.addLayout(title_layout)
+        
+        # Add settings button to the right
+        self.settings_button = QPushButton("⚙️")  # Gear emoji
+        self.settings_button.setObjectName("iconButton")
+        self.settings_button.setToolTip("Settings")
+        self.settings_button.clicked.connect(self.open_settings)
+        self.settings_button.setMaximumWidth(40)
+        self.settings_button.setMaximumHeight(40)
+        header_layout.addWidget(self.settings_button, alignment=Qt.AlignRight)
+
+        main_layout.addLayout(header_layout)
         
         # Add some spacing
         main_layout.addSpacing(20)
@@ -265,6 +305,7 @@ class YouTubeDownloader(QWidget):
         
         self.location_label = QLabel("Not selected")
         self.location_label.setObjectName("locationLabel")
+        self.location_label.setText(self.download_path if self.download_path else "Not selected")
         
         self.choose_button = QPushButton("Choose Location")
         self.choose_button.setObjectName("outlineButton")
@@ -327,7 +368,18 @@ class YouTubeDownloader(QWidget):
         error_color = "#b00020"
         background = "#f8f9fa"
         
-        self.setStyleSheet(f"""
+        self.setStyleSheet(f"""            
+            QPushButton#iconButton {{
+                background-color: transparent;
+                border-radius: 20px;
+                font-size: 20px;
+                padding: 5px;
+            }}
+
+            QPushButton#iconButton:hover {{
+                background-color: #e8f0fe;
+            }}
+
             QWidget {{
                 background-color: {background};
                 color: {on_surface};
@@ -456,6 +508,12 @@ class YouTubeDownloader(QWidget):
                 border-radius: 3px;
             }}
         """)
+
+    # Add this method to open settings window
+    def open_settings(self):
+        self.settings_window = SettingsWindow()
+        self.settings_window.closed.connect(self.load_settings)  # Reload settings when closed
+        self.settings_window.exec_()
 
     def fetch_video_info(self):
         url = self.url_input.text().strip()
@@ -592,6 +650,23 @@ class YouTubeDownloader(QWidget):
             else:
                 QMessageBox.critical(self, "Error", message)
                 self.status_label.setText("Download failed")
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(
+            self,
+            "Exit",
+            "Are you sure you want to quit?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            print("Window is closing. Performing cleanup...")
+            # You can call your custom callback here
+            # self.my_on_close_callback()
+            event.accept()
+        else:
+            event.ignore()
 
 
 if __name__ == "__main__":
