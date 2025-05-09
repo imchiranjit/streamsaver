@@ -262,7 +262,8 @@ class YouTubeDownloader(QWidget):
                 border-radius: 8px;
                 padding: 8px 12px;
                 background: {surface};
-                selection-background-color: #e8f0fe;
+                selection-color: {surface};
+                selection-background-color: {primary_color};
             }}
             
             QLineEdit#materialInput:focus {{
@@ -308,21 +309,23 @@ class YouTubeDownloader(QWidget):
             }}
             
             QPushButton#secondaryButton {{
-                background-color: #ed5e68;
-                color: #feffff;
+                background-color: transparent;
+                color: #ed5e68;
                 border: none;
                 border-radius: 24px;
+                border: 1px solid #ed5e68;
                 font-weight: bold;
                 padding: 8px 16px;
             }}
             
             QPushButton#secondaryButton:hover {{
-                background-color: #d0d0d0;
+                background-color: rgba(244, 67, 54, 0.1);
             }}
             
             QPushButton#secondaryButton:disabled {{
                 background-color: #f1f1f1;
                 color: #bdbdbd;
+                border-color: #f1f1f1;
             }}
             
             QPushButton#outlineButton {{
