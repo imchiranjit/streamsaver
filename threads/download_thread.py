@@ -37,10 +37,11 @@ class DownloadThread(QThread):
 
     def progress_hook(self, d):
         if self.is_cancelled:
-            return
+            raise Exception("Download cancelled by user")
             
         if d['status'] == 'downloading':
-            percent = d.get('downloaded_bytes', 0) / d.get('total_bytes', d.get('total_bytes_estimate', 0)) * 100
+            size = d.get('total_bytes', d.get('total_bytes_estimate', 0))
+            percent = d.get('downloaded_bytes', 0) / size * 100
             if percent:
                 # Convert to float if it's not None and clamp between 0-100
                 percent = float(percent) if percent is not None else 0
@@ -49,15 +50,36 @@ class DownloadThread(QThread):
                 # Format download info
                 speed = d.get('speed', 0)
                 if speed:
-                    speed_str = f"{speed/1024/1024:.2f} MB/s"
+                    # Convert speed to MB/s or KB/s or Bytes/s
+                    if speed > 1024 * 1024 * 1024:
+                        speed_str = f"{speed/1024/1024/1024:.2f} GiB/s"
+                    elif speed > 1024 * 1024:
+                        speed_str = f"{speed/1024/1024:.2f} MiB/s"
+                    elif speed > 1024:
+                        speed_str = f"{speed/1024:.2f} KiB/s"
+                    else:
+                        speed_str = f"{speed:.2f} Bytes/s"
                 else:
                     speed_str = "calculating..."
+
+                if size:
+                    # Convert size to MiB or GiB or KiB or Bytes
+                    if size > 1024 * 1024 * 1024:
+                        size_str = f"{size/1024/1024/1024:.2f} GiB"
+                    elif size > 1024 * 1024:
+                        size_str = f"{size/1024/1024:.2f} MiB"
+                    elif size > 1024:
+                        size_str = f"{size/1024:.2f} KiB"
+                    else:
+                        size_str = f"{size:.2f} Bytes"
+                else:
+                    size_str = "calculating..."
                 
                 eta = d.get('eta', 0)
                 if eta:
-                    eta_str = f"ETA: {eta} sec"
+                    eta_str = f"ETA: {eta:.0f} sec"
                 else:
                     eta_str = "calculating..."
                 
-                status = f"{speed_str} | {eta_str}"
+                status = f"{percent:.1f}% ~ {size_str} | {speed_str} | {eta_str}"
                 self.progress.emit(percent, status)
