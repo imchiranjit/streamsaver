@@ -15,6 +15,15 @@ A desktop application for downloading YouTube videos easily with a modern Materi
 
 ## 💿 Installation
 
+### Prerequisites
+
+Before installing Stream Saver, make sure you have:
+
+- 🎬 **FFmpeg** - Required for video/audio processing
+  - **Windows**: Download from [FFmpeg.org](https://ffmpeg.org/download.html) and add to PATH
+  - **macOS**: Install with `brew install ffmpeg`
+  - **Linux**: Install with your package manager (e.g., `sudo apt install ffmpeg`)
+
 ### Pre-built Executable
 
 You can download the pre-built executable from the releases page:
