@@ -48,7 +48,7 @@ pip install -r requirements.txt
 
 3. 🚀 Run the application
 ```
-python main.py
+python app.py
 ```
 
 ## 📝 How to Use
