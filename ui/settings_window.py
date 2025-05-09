@@ -1,35 +1,22 @@
-import os
-import json
+from utils.settings import Settings
 from PyQt5.QtWidgets import (
-    QWidget, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QDialog, 
     QPushButton, QFileDialog, QSpinBox, QCheckBox, QFrame,
     QTabWidget, QGridLayout, QGroupBox, QComboBox
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 
+
 class SettingsWindow(QDialog):
+
     closed = pyqtSignal()  # Signal to indicate the window is closed
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Stream Saver - Settings")
         self.setGeometry(300, 300, 600, 400)
-        
-        # Default settings
-        self.settings = {
-            "general": {
-                "default_download_location": "",
-                "theme": "light"
-            },
-            "downloader": {
-                "max_connections": 3,
-                "post_process_audio": False,
-                "post_process_video": False,
-                "preferred_audio_format": "mp3",
-                "preferred_video_quality": "best",
-                "auto_add_metadata": True
-            }
-        }
+        self.settings = Settings()
         
         self.load_settings()
         self.setup_ui()
@@ -81,7 +68,7 @@ class SettingsWindow(QDialog):
         location_group.setObjectName("settingsGroup")
         location_layout = QHBoxLayout(location_group)
         
-        self.location_label = QLabel(self.settings["general"]["default_download_location"] or "Not selected")
+        self.location_label = QLabel(self.settings.get_default_download_location() or "Not selected")
         self.location_label.setObjectName("locationLabel")
         self.location_label.setWordWrap(True)
         
@@ -107,7 +94,7 @@ class SettingsWindow(QDialog):
         self.theme_combo.setMinimumHeight(40)
         
         # Set current theme
-        index = self.theme_combo.findData(self.settings["general"]["theme"])
+        index = self.theme_combo.findData(self.settings.get_theme())
         if index >= 0:
             self.theme_combo.setCurrentIndex(index)
         
@@ -132,7 +119,7 @@ class SettingsWindow(QDialog):
         self.max_connections = QSpinBox()
         self.max_connections.setObjectName("materialSpinBox")
         self.max_connections.setRange(1, 10)
-        self.max_connections.setValue(self.settings["downloader"]["max_connections"])
+        self.max_connections.setValue(self.settings.get_max_connections())
         self.max_connections.setMinimumHeight(40)
         connection_layout.addWidget(self.max_connections, 0, 1)
         
@@ -145,15 +132,15 @@ class SettingsWindow(QDialog):
         
         self.process_audio = QCheckBox("Extract audio from videos")
         self.process_audio.setObjectName("materialCheckbox")
-        self.process_audio.setChecked(self.settings["downloader"]["post_process_audio"])
+        self.process_audio.setChecked(self.settings.get_post_process_audio())
         
         self.process_video = QCheckBox("Optimize video files after download")
         self.process_video.setObjectName("materialCheckbox")
-        self.process_video.setChecked(self.settings["downloader"]["post_process_video"])
+        self.process_video.setChecked(self.settings.get_post_process_video())
         
         self.add_metadata = QCheckBox("Automatically add metadata (title, artist, etc.)")
         self.add_metadata.setObjectName("materialCheckbox")
-        self.add_metadata.setChecked(self.settings["downloader"]["auto_add_metadata"])
+        self.add_metadata.setChecked(self.settings.get_auto_add_metadata())
         
         post_process_layout.addWidget(self.process_audio)
         post_process_layout.addWidget(self.process_video)
@@ -170,7 +157,7 @@ class SettingsWindow(QDialog):
         self.audio_format = QComboBox()
         self.audio_format.setObjectName("materialCombo")
         self.audio_format.addItems(["mp3", "m4a", "wav", "flac", "opus"])
-        index = self.audio_format.findText(self.settings["downloader"]["preferred_audio_format"])
+        index = self.audio_format.findText(self.settings.get_preferred_audio_format())
         if index >= 0:
             self.audio_format.setCurrentIndex(index)
         self.audio_format.setMinimumHeight(40)
@@ -184,7 +171,7 @@ class SettingsWindow(QDialog):
         self.video_quality.addItem("480p", "480")
         self.video_quality.addItem("360p", "360")
         
-        index = self.video_quality.findData(self.settings["downloader"]["preferred_video_quality"])
+        index = self.video_quality.findData(self.settings.get_preferred_video_quality())
         if index >= 0:
             self.video_quality.setCurrentIndex(index)
         self.video_quality.setMinimumHeight(40)
@@ -402,46 +389,29 @@ class SettingsWindow(QDialog):
         if path:
             self.location_label.setText(path)
     
-    def get_settings_path(self):
-        """Get the path for the settings file"""
-        # Get the directory where the script is located
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(base_dir, "settings.json")
-    
     def load_settings(self):
-        """Load settings from JSON file"""
-        settings_path = self.get_settings_path()
         try:
-            if os.path.exists(settings_path):
-                with open(settings_path, 'r') as f:
-                    loaded_settings = json.load(f)
-                    # Update settings with loaded values
-                    for category in loaded_settings:
-                        if category in self.settings:
-                            self.settings[category].update(loaded_settings[category])
+            self.settings.load()
         except Exception as e:
             print(f"Error loading settings: {e}")
     
     def save_settings(self):
-        """Save current settings to JSON file"""
-        # Update settings from UI values
-        self.settings["general"]["default_download_location"] = self.location_label.text()
-        self.settings["general"]["theme"] = self.theme_combo.currentData()
-        
-        self.settings["downloader"]["max_connections"] = self.max_connections.value()
-        self.settings["downloader"]["post_process_audio"] = self.process_audio.isChecked()
-        self.settings["downloader"]["post_process_video"] = self.process_video.isChecked()
-        self.settings["downloader"]["auto_add_metadata"] = self.add_metadata.isChecked()
-        self.settings["downloader"]["preferred_audio_format"] = self.audio_format.currentText()
-        self.settings["downloader"]["preferred_video_quality"] = self.video_quality.currentData()
-        
-        # Save to file
-        settings_path = self.get_settings_path()
+
         try:
-            with open(settings_path, 'w') as f:
-                json.dump(self.settings, f, indent=4)
-            print("Settings saved successfully")
+            self.settings.set_default_download_location(self.location_label.text())
+            self.settings.set_theme(self.theme_combo.currentData())
+            self.settings.set_max_connections(self.max_connections.value())
+            self.settings.set_post_process_audio(self.process_audio.isChecked())
+            self.settings.set_post_process_video(self.process_video.isChecked())
+            self.settings.set_auto_add_metadata(self.add_metadata.isChecked())
+            self.settings.set_preferred_audio_format(self.audio_format.currentText())
+            self.settings.set_preferred_video_quality(self.video_quality.currentData())
+
+            self.settings.save()
+
             self.close()
+            print("Settings saved successfully")
+            
         except Exception as e:
             print(f"Error saving settings: {e}")
 

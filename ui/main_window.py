@@ -1,158 +1,14 @@
-import sys
-import os
-import json
-from settings import SettingsWindow
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLabel,
-    QLineEdit, QPushButton, QFileDialog, QMessageBox,
-    QProgressBar, QHBoxLayout, QFrame, QComboBox
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
+    QPushButton, QFileDialog, QFrame, QComboBox, QMessageBox,
+    QProgressBar
 )
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from PyQt5.QtGui import QFont, QIcon, QPalette, QColor
-import yt_dlp
-
-
-class FetchThread(QThread):
-    finished = pyqtSignal(bool, dict, str)
-
-    def __init__(self, url):
-        super().__init__()
-        self.url = url
-
-    def run(self):
-        try:
-            ydl_opts = {
-                'quiet': True,
-                'no_warnings': True,
-                'skip_download': True,
-            }
-            
-            formats_data = {'video': [], 'audio': []}
-            video_info = {}
-            
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(self.url, download=False)
-                
-                if info.get('formats'):
-                    # Save video title and thumbnail
-                    video_info['title'] = info.get('title', 'Unknown Title')
-                    video_info['thumbnail'] = info.get('thumbnail', '')
-                    
-                    # Process formats
-                    for fmt in info['formats']:
-                        format_id = fmt.get('format_id', '')
-                        format_note = fmt.get('format_note', '')
-                        ext = fmt.get('ext', '')
-                        resolution = fmt.get('resolution', '')
-                        
-                        if fmt.get('vcodec') != 'none' and fmt.get('acodec') != 'none':
-                            # This is a format with both video and audio
-                            tbr = fmt.get('tbr', 0)
-                            quality_str = f"{resolution} ({format_note}) [{ext}] [{tbr}kbps]"
-                            formats_data['video'].append({
-                                'format_id': format_id,
-                                'display': quality_str,
-                                'is_video_audio': True
-                            })
-                        elif fmt.get('vcodec') != 'none':
-                            # Video-only format
-                            vbr = fmt.get('vbr', 0)
-                            quality_str = f"{resolution} (Video Only) [{ext}] [{vbr}kbps]"
-                            formats_data['video'].append({
-                                'format_id': format_id,
-                                'display': quality_str,
-                                'is_video_audio': False
-                            })
-                        elif fmt.get('acodec') != 'none':
-                            # Audio-only format
-                            abr = fmt.get('abr', 0)
-                            quality_str = f"{abr}kbps (Audio Only) [{ext}]"
-                            formats_data['audio'].append({
-                                'format_id': format_id,
-                                'display': quality_str
-                            })
-            
-            # Sort video formats by resolution (higher first)
-            formats_data['video'] = sorted(
-                formats_data['video'],
-                key=lambda x: x['display'],
-                reverse=True
-            )
-            
-            # Sort audio formats by bitrate (higher first)
-            formats_data['audio'] = sorted(
-                formats_data['audio'],
-                key=lambda x: x['display'],
-                reverse=True
-            )
-            
-            self.finished.emit(True, {'formats': formats_data, 'info': video_info}, "Formats fetched successfully")
-                
-        except Exception as e:
-            self.finished.emit(False, {}, str(e))
-
-
-class DownloadThread(QThread):
-    progress = pyqtSignal(float, str)
-    finished = pyqtSignal(bool, str)
-
-    def __init__(self, url, download_path, format_id):
-        super().__init__()
-        self.url = url
-        self.download_path = download_path
-        self.format_id = format_id
-        self.is_cancelled = False
-
-    def run(self):
-        try:
-            ydl_opts = {
-                'outtmpl': f'{self.download_path}/%(title)s.%(ext)s',
-                'progress_hooks': [self.progress_hook],
-                'format': self.format_id
-            }
-            
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                if not self.is_cancelled:
-                    ydl.download([self.url])
-            
-            if self.is_cancelled:
-                self.finished.emit(False, "Download cancelled by user")
-            else:
-                self.finished.emit(True, "Download completed successfully!")
-                
-        except Exception as e:
-            self.finished.emit(False, str(e))
-
-    def cancel_download(self):
-        self.is_cancelled = True
-
-    def progress_hook(self, d):
-        if self.is_cancelled:
-            return
-            
-        if d['status'] == 'downloading':
-            percent = d.get('downloaded_bytes', 0) / d.get('total_bytes', d.get('total_bytes_estimate', 0)) * 100
-            if percent:
-                # Convert to float if it's not None and clamp between 0-100
-                percent = float(percent) if percent is not None else 0
-                percent = max(0, min(percent, 100))
-                
-                # Format download info
-                speed = d.get('speed', 0)
-                if speed:
-                    speed_str = f"{speed/1024/1024:.2f} MB/s"
-                else:
-                    speed_str = "calculating..."
-                
-                eta = d.get('eta', 0)
-                if eta:
-                    eta_str = f"ETA: {eta} sec"
-                else:
-                    eta_str = "calculating..."
-                
-                status = f"{speed_str} | {eta_str}"
-                self.progress.emit(percent, status)
-
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from utils.settings import Settings
+from .settings_window import SettingsWindow
+from threads.fetch_thread import FetchThread
+from threads.download_thread import DownloadThread
 
 class YouTubeDownloader(QWidget):
     def __init__(self):
@@ -163,26 +19,10 @@ class YouTubeDownloader(QWidget):
         self.download_thread = None
         self.fetch_thread = None
         self.format_data = None
-        self.settings = None
+        self.settings = Settings()
         self.setup_ui()
-        self.load_settings()  # Load settings
         self.apply_material_styles()
-
-    def load_settings(self):
-        """Load settings from JSON file"""
-        settings_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "settings.json")
-        try:
-            if os.path.exists(settings_path):
-                with open(settings_path, 'r') as f:
-                    self.settings = json.load(f)
-                    # Set default download path from settings if available
-                    if self.settings and 'general' in self.settings and 'default_download_location' in self.settings['general']:
-                        self.download_path = self.settings['general']['default_download_location']
-                        if self.download_path and os.path.exists(self.download_path):
-                            self.location_label.setText(self.download_path)
-        except Exception as e:
-            print(f"Error loading settings: {e}")
-            self.settings = None
+        self.load_settings()  # Load settings
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
@@ -509,6 +349,11 @@ class YouTubeDownloader(QWidget):
             }}
         """)
 
+    def load_settings(self):
+        self.settings.load()
+        self.download_path = self.settings.get_default_download_location()
+        self.location_label.setText(self.download_path)
+
     # Add this method to open settings window
     def open_settings(self):
         self.settings_window = SettingsWindow()
@@ -667,10 +512,3 @@ class YouTubeDownloader(QWidget):
             event.accept()
         else:
             event.ignore()
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = YouTubeDownloader()
-    window.show()
-    sys.exit(app.exec_())
