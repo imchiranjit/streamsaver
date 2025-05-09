@@ -30,7 +30,7 @@ You can download the pre-built executable from the releases page:
 
 1. 🔗 Go to the [Releases](https://github.com/imchiranjit/streamsaver/releases) page
 2. ⬇️ Download the latest `StreamSaver.zip` file
-3. 📦 Extract and run `StreamSaver.exe`
+3. 📦 Extract and run `app.exe`
 
 ### From Source
 
