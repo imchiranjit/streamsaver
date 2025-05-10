@@ -472,6 +472,17 @@ class YouTubeDownloader(QWidget):
         self.download_thread.start()
     
     def cancel_download(self):
+        # Show a popup to confirm cancellation
+        reply = QMessageBox.question(
+            self,
+            "Cancel Download",
+            "Are you sure you want to cancel the download?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply == QMessageBox.StandardButton.No:
+            return
+        
         if self.download_thread and self.download_thread.isRunning():
             self.status_label.setText("Cancelling download...")
             self.download_thread.cancel_download()

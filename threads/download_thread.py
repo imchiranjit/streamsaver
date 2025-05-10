@@ -75,9 +75,15 @@ class DownloadThread(QThread):
                 else:
                     size_str = "calculating..."
                 
-                eta = d.get('eta', 0)
+                eta = int(d.get('eta', 0))
                 if eta:
-                    eta_str = f"ETA: {eta:.0f} sec"
+                    # Convert eta to (seconds or minutes seconds or hours minutes)
+                    if eta > 3600:
+                        eta_str = f"ETA: {eta//3600}h {eta%3600//60}m"
+                    elif eta > 60:
+                        eta_str = f"ETA: {eta//60}m {eta%60}s"
+                    else:
+                        eta_str = f"ETA: {eta}s"
                 else:
                     eta_str = "calculating..."
                 
