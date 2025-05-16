@@ -12,7 +12,7 @@ from threads.download_thread import DownloadThread
 from .material_dialog import MaterialDialog
 
 class YouTubeDownloader(QWidget):
-    def __init__(self):
+    def __init__(self, default_url=None):
         super().__init__()
         self.setWindowTitle("Stream Saver")
         self.setGeometry(300, 300, 600, 400)
@@ -24,6 +24,9 @@ class YouTubeDownloader(QWidget):
         self.setup_ui()
         self.apply_material_styles()
         self.load_settings()  # Load settings
+        if default_url:
+            self.url_input.setText(default_url)
+            self.fetch_video_info()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
