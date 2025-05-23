@@ -22,6 +22,7 @@ class MaterialDialog(QDialog):
             default_button: Index of default button
         """
         super().__init__(parent)
+        self.icon_type = icon_type
         self.setWindowTitle(title)
         self.setWindowFlags(Qt.Dialog | Qt.WindowCloseButtonHint)
         self.setMinimumWidth(400)
@@ -38,8 +39,6 @@ class MaterialDialog(QDialog):
             "Retry": 5,
             "Ignore": 6
         }
-
-        Sounds().play_system_sound(icon_type)
         
         self.setup_ui(title, message, icon_type, buttons, default_button)
         self.apply_styles()
@@ -271,6 +270,16 @@ class MaterialDialog(QDialog):
                 background-color: #e8f0fe;
             }}
         """)
+
+    def showEvent(self, event):
+        """Override showEvent to play sound when dialog becomes visible"""
+        super().showEvent(event)
+        try:
+            # Play sound after dialog is shown
+            sounds = Sounds()
+            sounds.play_system_sound(self.icon_type)
+        except Exception as e:
+            print("Error playing sound:", str(e))
     
     @staticmethod
     def info(parent, title, message, buttons=("OK",), default_button=0):

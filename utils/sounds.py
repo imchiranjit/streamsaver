@@ -24,22 +24,24 @@ class Sounds():
             pass
     
     def _play_windows_sound(self, icon_type):
-        """Play Windows system sounds using rundll32"""
+        """Play Windows system sounds using multiple fallback methods"""
+        
         try:
-            # Use rundll32 to play system sounds
-            sound_map = {
-                "info": "0",      # MB_OK sound
-                "warning": "48",  # MB_ICONEXCLAMATION  
-                "error": "16",    # MB_ICONHAND
-                "question": "32"  # MB_ICONQUESTION
+            import winsound
+            sound_files = {
+                "info": "*",
+                "warning": "SystemExclamation",
+                "error": "SystemHand",
+                "question": "SystemQuestion"
             }
-            sound_code = sound_map.get(icon_type, "0")
-            
-            # This method is working - using MessageBeep with sound codes
-            os.system(f'rundll32 user32.dll,MessageBeep {sound_code}')
+            sound_name = sound_files.get(icon_type, "*")
+            winsound.PlaySound(sound_name, winsound.SND_ALIAS | winsound.SND_ASYNC)
             return True
         except Exception:
-            return self._play_fallback_sound()
+            pass
+        
+        # Fallback
+        return self._play_fallback_sound()
     
     def _play_macos_sound(self, icon_type):
         """Play macOS system sounds"""
