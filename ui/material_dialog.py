@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
+from utils.sounds import Sounds
+
 class MaterialDialog(QDialog):
     def __init__(self, parent=None, title="", message="", icon_type="info", 
                  buttons=("OK",), default_button=0):
@@ -36,6 +38,8 @@ class MaterialDialog(QDialog):
             "Retry": 5,
             "Ignore": 6
         }
+
+        Sounds().play_system_sound(icon_type)
         
         self.setup_ui(title, message, icon_type, buttons, default_button)
         self.apply_styles()
