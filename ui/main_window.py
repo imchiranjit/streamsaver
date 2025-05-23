@@ -370,7 +370,6 @@ class YouTubeDownloader(QWidget):
     def fetch_video_info(self):
         url = self.url_input.text().strip()
         if not url:
-            # QMessageBox.critical(self, "Error", "Please enter a YouTube URL.")
             MaterialDialog.error(self, "Error", "Please enter a YouTube URL.")
             return
         
@@ -413,7 +412,6 @@ class YouTubeDownloader(QWidget):
             self.audio_quality_combo.setEnabled(True)
             self.status_label.setText("Please select video quality")
         else:
-            # QMessageBox.critical(self, "Error", message)
             MaterialDialog.error(self, "Error", message)
             self.status_label.setText("Failed to fetch video information")
     
@@ -444,11 +442,9 @@ class YouTubeDownloader(QWidget):
     def download_video(self):
         url = self.url_input.text().strip()
         if not url:
-            # QMessageBox.critical(self, "Error", "Please enter a YouTube URL.")
             MaterialDialog.error(self, "Error", "Please enter a YouTube URL.")
             return
         if not self.download_path:
-            # QMessageBox.critical(self, "Error", "Please select a download location.")
             MaterialDialog.error(self, "Error", "Please select a download location.")
             return
         
@@ -457,7 +453,7 @@ class YouTubeDownloader(QWidget):
         audio_idx = self.audio_quality_combo.currentIndex()
         
         if video_idx <= 0:
-            QMessageBox.critical(self, "Error", "Please select a video quality.")
+            MaterialDialog.error(self, "Error", "Please select a video quality.")
             return
         
         video_format = self.video_quality_combo.itemData(video_idx)
@@ -480,16 +476,6 @@ class YouTubeDownloader(QWidget):
         self.download_thread.start()
     
     def cancel_download(self):
-        # Show a popup to confirm cancellation
-        # reply = QMessageBox.question(
-        #     self,
-        #     "Cancel Download",
-        #     "Are you sure you want to cancel the download?",
-        #     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        #     QMessageBox.StandardButton.No,
-        # )
-        # if reply == QMessageBox.StandardButton.No:
-        #     return
         result = MaterialDialog.question(
             self,
             "Cancel Download",
@@ -515,7 +501,6 @@ class YouTubeDownloader(QWidget):
         self.cancel_button.setEnabled(False)
         
         if success:
-            # QMessageBox.information(self, "Success", message)
             MaterialDialog.info(self, "Success", message)
             self.progress_bar.setValue(100)
             self.status_label.setText("Download completed")
@@ -525,24 +510,10 @@ class YouTubeDownloader(QWidget):
                 self.status_label.setText("Download cancelled")
                 self.progress_bar.setValue(0)
             else:
-                # QMessageBox.critical(self, "Error", message)
                 MaterialDialog.error(self, "Error", message)
                 self.status_label.setText("Download failed")
 
     def closeEvent(self, event):
-        # reply = QMessageBox.question(
-        #     self,
-        #     "Exit",
-        #     "Are you sure you want to quit?",
-        #     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        #     QMessageBox.StandardButton.No,
-        # )
-
-        # if reply == QMessageBox.StandardButton.Yes:
-        #     print("Window is closing. Performing cleanup...")
-        #     # You can call your custom callback here
-        #     # self.my_on_close_callback()
-        #     event.accept()
         result = MaterialDialog.question(
             self,
             "Exit",
