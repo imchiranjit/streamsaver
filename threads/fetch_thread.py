@@ -37,7 +37,9 @@ class FetchThread(QThread):
                         if fmt.get('vcodec') != 'none' and fmt.get('acodec') != 'none':
                             # This is a format with both video and audio
                             tbr = fmt.get('tbr', 0)
-                            quality_str = f"{resolution} ({format_note}) [{ext}] [{tbr}kbps]"
+                            vcodec = fmt.get('vcodec', '')
+                            acodec = fmt.get('acodec', '')
+                            quality_str = f"{resolution} [{vcodec}] [{acodec}] [{tbr}kbps] (With Audio)"
                             formats_data['video'].append({
                                 'format_id': format_id,
                                 'display': quality_str,
@@ -46,7 +48,8 @@ class FetchThread(QThread):
                         elif fmt.get('vcodec') != 'none':
                             # Video-only format
                             vbr = fmt.get('vbr', 0)
-                            quality_str = f"{resolution} (Video Only) [{ext}] [{vbr}kbps]"
+                            vcodec = fmt.get('vcodec', '')
+                            quality_str = f"{resolution} [{vcodec}] [{vbr}kbps]"
                             formats_data['video'].append({
                                 'format_id': format_id,
                                 'display': quality_str,
@@ -55,7 +58,9 @@ class FetchThread(QThread):
                         elif fmt.get('acodec') != 'none':
                             # Audio-only format
                             abr = fmt.get('abr', 0)
-                            quality_str = f"{abr}kbps (Audio Only) [{ext}]"
+                            acodec = fmt.get('acodec', '')
+                            more_info = fmt.get('format_note', '')
+                            quality_str = f"{abr}kbps ({more_info}) [{acodec}]"
                             formats_data['audio'].append({
                                 'format_id': format_id,
                                 'display': quality_str
