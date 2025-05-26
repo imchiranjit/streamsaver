@@ -5,17 +5,20 @@ class DownloadThread(QThread):
     progress = pyqtSignal(float, str)
     finished = pyqtSignal(bool, str)
 
-    def __init__(self, url, download_path, format_id):
+    def __init__(self, url, download_path, format_id, max_concurrent_downloads=10):
         super().__init__()
         self.url = url
         self.download_path = download_path
         self.format_id = format_id
         self.is_cancelled = False
+        self.max_concurrent_downloads = max_concurrent_downloads
 
     def run(self):
         try:
             ydl_opts = {
                 'outtmpl': f'{self.download_path}/%(title)s.%(ext)s',
+                'hls_prefer_native': True,
+                'concurrent_fragment_downloads': self.max_concurrent_downloads,
                 'progress_hooks': [self.progress_hook],
                 'format': self.format_id
             }

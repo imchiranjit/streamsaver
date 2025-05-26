@@ -10,7 +10,7 @@ class Settings:
                 "theme": "light"
             },
             "downloader": {
-                "max_connections": 3,
+                "max_connections": 10,
                 "post_process_audio": False,
                 "post_process_video": False,
                 "preferred_audio_format": "mp3",

@@ -470,7 +470,7 @@ class YouTubeDownloader(QWidget):
         self.progress_bar.setValue(0)
         self.status_label.setText("Starting download...")
         
-        self.download_thread = DownloadThread(url, self.download_path, format_str)
+        self.download_thread = DownloadThread(url, self.download_path, format_str, self.settings.get_max_connections())
         self.download_thread.progress.connect(self.update_progress)
         self.download_thread.finished.connect(self.download_finished)
         self.download_thread.start()
