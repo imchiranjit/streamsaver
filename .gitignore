@@ -125,6 +125,11 @@ Thumbs.db
 .env.production
 .env.test
 
-# Config files
+# Installer files
 settings.json
 logo.ico
+infoafterinstall.txt
+infobeforeinstall.txt
+setup.iss
+streamsaver.reg
+/Output
